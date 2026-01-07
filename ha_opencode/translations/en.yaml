@@ -1,0 +1,25 @@
+---
+configuration:
+  mcp_enabled:
+    name: "Enable MCP Home Assistant Integration"
+    description: "Enable the Model Context Protocol (MCP) server that allows OpenCode to query entities and call services directly. When enabled, you can ask OpenCode things like 'turn on the living room lights' or 'what's the temperature in the bedroom?'"
+  
+  lsp_enabled:
+    name: "Enable LSP (Language Server Protocol)"
+    description: "Enable Language Server Protocol support for intelligent code assistance. Provides real-time diagnostics, auto-completion, and validation for Home Assistant YAML configuration files."
+  
+  terminal_theme:
+    name: "Terminal Theme"
+    description: "Color scheme for the terminal. Choose a theme that's easy on your eyes."
+  
+  font_size:
+    name: "Font Size"
+    description: "Terminal font size in pixels. Larger sizes improve readability, smaller sizes show more content."
+  
+  cursor_style:
+    name: "Cursor Style"
+    description: "The appearance of the terminal cursor."
+  
+  cursor_blink:
+    name: "Blinking Cursor"
+    description: "Whether the terminal cursor should blink."

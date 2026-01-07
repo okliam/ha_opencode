@@ -1,0 +1,62 @@
+---
+name: "HA OpenCode"
+description: "AI coding agent for editing Home Assistant configuration with deep MCP integration and LSP support"
+version: "1.0.0"
+slug: "ha_opencode"
+url: "https://github.com/magnusoverli/ha_opencode"
+arch:
+  - aarch64
+  - amd64
+startup: application
+init: false
+
+# Ingress configuration
+ingress: true
+ingress_port: 8099
+ingress_stream: true
+panel_icon: mdi:robot
+panel_title: HA OpenCode
+
+# File access - Home Assistant config directory
+map:
+  - type: homeassistant_config
+    read_only: false
+
+# API access - needed for logs
+hassio_api: true
+hassio_role: default
+homeassistant_api: true
+
+# Security - keep permissions minimal
+host_network: false
+privileged: []
+apparmor: true
+
+# User-configurable options
+options:
+  # Feature toggles
+  mcp_enabled: false
+  lsp_enabled: true
+  
+  # Terminal appearance
+  terminal_theme: "breeze"
+  font_size: 14
+  cursor_style: "block"
+  cursor_blink: false
+
+schema:
+  # Feature toggles
+  mcp_enabled: bool
+  lsp_enabled: bool
+  
+  # Terminal appearance
+  terminal_theme: list(breeze|catppuccin_mocha|catppuccin_latte|dracula|nord|tokyo_night|one_dark|solarized_dark|solarized_light|gruvbox_dark)
+  font_size: int(10,24)
+  cursor_style: list(block|underline|bar)
+  cursor_blink: bool
+
+# Exclude caches from backups
+backup_exclude:
+  - ".npm/*"
+  - ".cache/*"
+  - ".local/share/opencode/cache/*"

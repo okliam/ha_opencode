@@ -1,0 +1,26 @@
+{
+  "name": "ha-mcp-server",
+  "version": "2.1.0",
+  "description": "Enhanced Home Assistant MCP server with Tools, Resources, Prompts, and Intelligence Layer",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.0",
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "home-assistant",
+    "opencode",
+    "smart-home",
+    "automation"
+  ]
+}
