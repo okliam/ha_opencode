@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.1.0
+
+**Infrastructure: Pre-built Docker Images**
+
+- Add-on now uses pre-built Docker images from GitHub Container Registry
+  - Update progress now visible in Home Assistant UI
+  - Significantly faster updates (no local build required)
+  - Images built automatically via GitHub Actions on each release
+- Added CI/CD workflow for multi-architecture builds (amd64, aarch64)
+- Existing users automatically migrate on update - no manual steps required
+
 ## 1.0.17
 
 **New Feature: ESPHome Integration**
