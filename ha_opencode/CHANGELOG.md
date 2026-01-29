@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.0.15
+
+**Build Improvements**
+
+- Improved Dockerfile for best practices and performance
+  - Use dynamic BUILD_VERSION label instead of hardcoded version
+  - Add configurable OPENCODE_VERSION arg for reproducible builds
+  - Fix parallel npm install with proper subshell syntax
+  - Replace deprecated `--production` flag with modern `--omit=dev`
+  - Remove npm audit suppression for better security visibility
+  - Consolidate ENV and RUN layers for efficiency
+  - Add .dockerignore to exclude unnecessary files from build context
+- Fixed license in build.yaml (MIT → Unlicense)
+
 ## 1.0.14
 
 **Terminology Update**
