@@ -1,6 +1,21 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.0.17
+
+**New Feature: ESPHome Integration**
+
+- Added 3 new MCP tools for ESPHome device management (MCP server v2.4)
+  - `esphome_list_devices` - List all configured ESPHome devices with version info
+  - `esphome_compile` - Compile firmware with full build log output
+  - `esphome_upload` - Flash firmware to devices via OTA or USB
+- Real-time build log streaming via WebSocket connection to ESPHome add-on
+- Auto-discovery of ESPHome add-on via Supervisor API
+- Added `ws` WebSocket dependency for ESPHome communication
+- Graceful error handling when ESPHome is not installed or not running
+- Build log truncation for large outputs (>300 lines)
+- Helpful troubleshooting tips included on compile/upload failures
+
 ## 1.0.16
 
 **New Feature: Update Management**

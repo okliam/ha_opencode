@@ -1,7 +1,7 @@
 {
   "name": "ha-mcp-server",
-  "version": "2.3.0",
-  "description": "Enhanced Home Assistant MCP server with Tools, Resources, Prompts, Update Management, and Intelligence Layer",
+  "version": "2.4.0",
+  "description": "Enhanced Home Assistant MCP server with Tools, Resources, Prompts, Update Management, ESPHome Integration, and Intelligence Layer",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.0",
+    "ws": "^8.18.0",
     "zod": "^3.25.0"
   },
   "engines": {

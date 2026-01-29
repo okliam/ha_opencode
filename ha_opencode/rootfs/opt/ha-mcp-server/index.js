@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Home Assistant MCP Server for OpenCode (Update Management Edition v2.3)
+ * Home Assistant MCP Server for OpenCode (ESPHome Integration Edition v2.4)
  * 
  * A cutting-edge MCP server providing deep integration with Home Assistant.
  * Implements the latest MCP specification (2025-06-18) features:
@@ -15,8 +15,9 @@
  * - Breaking changes awareness
  * - Deprecation pattern detection
  * - Real-time update progress monitoring
+ * - ESPHome build and flash integration
  * 
- * TOOLS (27):
+ * TOOLS (30):
  * - Entity state management (get, search, history)
  * - Service calls with intelligent targeting
  * - Configuration validation and management
@@ -24,6 +25,7 @@
  * - Anomaly detection and suggestions
  * - Documentation fetching and syntax checking
  * - Update management with real-time progress monitoring
+ * - ESPHome device management, compile, and upload
  * 
  * RESOURCES (9 + 4 templates):
  * - Live entity states by domain
@@ -53,6 +55,7 @@ import {
   ListResourceTemplatesRequestSchema,
   SetLevelRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import WebSocket from "ws";
 
 const SUPERVISOR_API = "http://supervisor/core/api";
 const SUPERVISOR_TOKEN = process.env.SUPERVISOR_TOKEN;
@@ -210,6 +213,141 @@ async function callSupervisor(endpoint, method = "GET", body = null) {
     return result.data !== undefined ? result.data : result;
   }
   return response.text();
+}
+
+// ============================================================================
+// ESPHOME INTEGRATION HELPERS
+// ============================================================================
+
+/**
+ * Discover ESPHome add-on and return its internal URL
+ * Returns null if ESPHome is not installed or not running
+ */
+async function discoverESPHome() {
+  try {
+    const addonsInfo = await callSupervisor("/addons");
+    const esphome = addonsInfo.addons.find(a => 
+      a.slug.includes("esphome") && a.installed
+    );
+    
+    if (!esphome) {
+      sendLog("debug", "esphome", { action: "discover", result: "not_installed" });
+      return null;
+    }
+    
+    const info = await callSupervisor(`/addons/${esphome.slug}/info`);
+    
+    // Construct internal hostname: repository_slug with underscores replaced by hyphens
+    const hostname = `${esphome.repository}_${esphome.slug}`.replace(/_/g, "-");
+    
+    const result = {
+      slug: esphome.slug,
+      name: esphome.name,
+      hostname,
+      url: `http://${hostname}:6052`,  // ESPHome dashboard port
+      state: info.state,
+      version: info.version,
+    };
+    
+    sendLog("debug", "esphome", { action: "discover", result });
+    return result;
+  } catch (error) {
+    sendLog("error", "esphome", { action: "discover_error", error: error.message });
+    return null;
+  }
+}
+
+/**
+ * Stream logs from ESPHome WebSocket endpoint
+ * @param {string} baseUrl - ESPHome dashboard URL (e.g., http://core-esphome:6052)
+ * @param {string} endpoint - WebSocket endpoint (e.g., "compile", "upload")
+ * @param {object} params - Parameters to send (e.g., { configuration: "device.yaml" })
+ * @param {function} onLine - Callback for each log line
+ * @param {number} timeout - Timeout in milliseconds (default: 10 minutes for builds)
+ * @returns {Promise<{success: boolean, code: number, logs: string[]}>}
+ */
+async function streamESPHomeLogs(baseUrl, endpoint, params, onLine = null, timeout = 600000) {
+  return new Promise((resolve, reject) => {
+    const logs = [];
+    const startTime = Date.now();
+    
+    // Parse the URL and construct WebSocket URL
+    const url = new URL(baseUrl);
+    const wsUrl = `ws://${url.host}/${endpoint}`;
+    
+    sendLog("debug", "esphome", { action: "ws_connect", url: wsUrl, params });
+    
+    const ws = new WebSocket(wsUrl);
+    
+    // Set timeout
+    const timeoutId = setTimeout(() => {
+      ws.close();
+      reject(new Error(`ESPHome operation timed out after ${timeout / 1000} seconds`));
+    }, timeout);
+    
+    ws.on("open", () => {
+      sendLog("debug", "esphome", { action: "ws_open", endpoint });
+      ws.send(JSON.stringify({ type: "spawn", ...params }));
+    });
+    
+    ws.on("message", (data) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        
+        if (msg.event === "line") {
+          logs.push(msg.data);
+          if (onLine) onLine(msg.data);
+        }
+        
+        if (msg.event === "exit") {
+          clearTimeout(timeoutId);
+          ws.close();
+          const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+          sendLog("info", "esphome", { 
+            action: "ws_complete", 
+            endpoint, 
+            success: msg.code === 0, 
+            code: msg.code,
+            duration: `${duration}s`,
+            logLines: logs.length 
+          });
+          resolve({ 
+            success: msg.code === 0, 
+            code: msg.code, 
+            logs,
+            duration: `${duration}s`
+          });
+        }
+      } catch (parseError) {
+        sendLog("warning", "esphome", { action: "ws_parse_error", error: parseError.message });
+      }
+    });
+    
+    ws.on("error", (error) => {
+      clearTimeout(timeoutId);
+      sendLog("error", "esphome", { action: "ws_error", endpoint, error: error.message });
+      reject(new Error(`ESPHome WebSocket error: ${error.message}`));
+    });
+    
+    ws.on("close", (code, reason) => {
+      clearTimeout(timeoutId);
+      // Only log unexpected closes (not our intentional closes)
+      if (logs.length === 0) {
+        sendLog("warning", "esphome", { action: "ws_close_unexpected", code, reason: reason?.toString() });
+      }
+    });
+  });
+}
+
+/**
+ * Get list of ESPHome devices via REST API
+ */
+async function getESPHomeDevices(esphomeUrl) {
+  const response = await fetch(`${esphomeUrl}/devices`);
+  if (!response.ok) {
+    throw new Error(`Failed to get ESPHome devices: ${response.status}`);
+  }
+  return await response.json();
 }
 
 // ============================================================================
@@ -1735,6 +1873,63 @@ const PROMPTS = [
       idempotent: true,
     },
   },
+  
+  // === ESPHOME INTEGRATION ===
+  {
+    name: "esphome_list_devices",
+    title: "List ESPHome Devices",
+    description: "List all configured ESPHome devices with current and deployed firmware versions. Requires ESPHome add-on to be installed and running.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    annotations: {
+      readOnly: true,
+      idempotent: true,
+    },
+  },
+  {
+    name: "esphome_compile",
+    title: "Compile ESPHome Firmware",
+    description: "Compile firmware for an ESPHome device. Returns the full build log including any errors. This may take 1-5 minutes depending on device complexity.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        device: {
+          type: "string",
+          description: "Device name or configuration file name (e.g., 'living-room-sensor' or 'living-room-sensor.yaml')",
+        },
+      },
+      required: ["device"],
+    },
+    annotations: {
+      readOnly: false,
+      idempotent: true,
+    },
+  },
+  {
+    name: "esphome_upload",
+    title: "Upload ESPHome Firmware",
+    description: "Upload compiled firmware to an ESPHome device via OTA (Over-The-Air) or USB. For OTA, the device must be online and reachable.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        device: {
+          type: "string",
+          description: "Device name or configuration file name",
+        },
+        port: {
+          type: "string",
+          description: "Upload target - device IP/hostname for OTA (e.g., '192.168.1.100') or USB path (e.g., '/dev/ttyUSB0')",
+        },
+      },
+      required: ["device", "port"],
+    },
+    annotations: {
+      readOnly: false,
+      idempotent: false,
+    },
+  },
 ];
 
 // ============================================================================
@@ -2708,6 +2903,197 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           });
         } catch (e) {
           throw new Error(`Failed to list jobs: ${e.message}`);
+        }
+      }
+
+      // === ESPHOME INTEGRATION ===
+      case "esphome_list_devices": {
+        sendLog("info", "esphome", { action: "list_devices" });
+        
+        // Discover ESPHome add-on
+        const esphome = await discoverESPHome();
+        if (!esphome) {
+          throw new Error("ESPHome add-on is not installed or not accessible. Please install ESPHome from the Home Assistant Add-on Store.");
+        }
+        
+        if (esphome.state !== "started") {
+          throw new Error(`ESPHome add-on is not running (current state: ${esphome.state}). Please start the ESPHome add-on first.`);
+        }
+        
+        try {
+          const devices = await getESPHomeDevices(esphome.url);
+          
+          let responseText = `# ESPHome Devices\n\n`;
+          responseText += `**ESPHome Version:** ${esphome.version}\n`;
+          responseText += `**Add-on:** ${esphome.name} (${esphome.slug})\n\n`;
+          
+          const configured = devices.configured || [];
+          const importable = devices.importable || [];
+          
+          if (configured.length === 0 && importable.length === 0) {
+            responseText += `*No ESPHome devices configured yet.*\n\n`;
+            responseText += `Create a new device in the ESPHome dashboard to get started.\n`;
+          } else {
+            if (configured.length > 0) {
+              responseText += `## Configured Devices (${configured.length})\n\n`;
+              responseText += `| Device | Platform | Current | Deployed | Status |\n`;
+              responseText += `|--------|----------|---------|----------|--------|\n`;
+              
+              for (const device of configured) {
+                const needsUpdate = device.current_version !== device.deployed_version;
+                const status = needsUpdate ? "⬆️ Update available" : "✓ Current";
+                responseText += `| ${device.name} | ${device.target_platform} | ${device.current_version || '-'} | ${device.deployed_version || '-'} | ${status} |\n`;
+              }
+              responseText += `\n`;
+            }
+            
+            if (importable.length > 0) {
+              responseText += `## Discoverable Devices (${importable.length})\n\n`;
+              responseText += `These devices can be adopted into ESPHome:\n\n`;
+              for (const device of importable) {
+                responseText += `- **${device.name}** (${device.project_name} v${device.project_version}) - ${device.network}\n`;
+              }
+            }
+          }
+          
+          return makeCompatibleResponse({
+            content: [createTextContent(responseText, { audience: ["user", "assistant"], priority: 0.8 })],
+          });
+        } catch (e) {
+          throw new Error(`Failed to get ESPHome devices: ${e.message}`);
+        }
+      }
+
+      case "esphome_compile": {
+        const { device } = args;
+        sendLog("info", "esphome", { action: "compile", device });
+        
+        // Discover ESPHome add-on
+        const esphome = await discoverESPHome();
+        if (!esphome) {
+          throw new Error("ESPHome add-on is not installed or not accessible.");
+        }
+        
+        if (esphome.state !== "started") {
+          throw new Error(`ESPHome add-on is not running (current state: ${esphome.state}). Please start the ESPHome add-on first.`);
+        }
+        
+        // Ensure device has .yaml extension
+        const configuration = device.endsWith(".yaml") ? device : `${device}.yaml`;
+        
+        try {
+          const result = await streamESPHomeLogs(
+            esphome.url,
+            "compile",
+            { configuration },
+            null,
+            600000  // 10 minute timeout for compilation
+          );
+          
+          // Format the output
+          let responseText = `# ESPHome Compile: ${device}\n\n`;
+          responseText += `**Status:** ${result.success ? "✅ Success" : "❌ Failed"}\n`;
+          responseText += `**Duration:** ${result.duration}\n`;
+          responseText += `**Exit Code:** ${result.code}\n\n`;
+          
+          responseText += `## Build Log\n\n`;
+          responseText += "```\n";
+          
+          // Truncate logs if too long (keep last 200 lines for errors, first 50 for context)
+          const logs = result.logs;
+          if (logs.length > 300) {
+            responseText += logs.slice(0, 50).join("\n");
+            responseText += `\n\n... (${logs.length - 250} lines omitted) ...\n\n`;
+            responseText += logs.slice(-200).join("\n");
+          } else {
+            responseText += logs.join("\n");
+          }
+          
+          responseText += "\n```\n";
+          
+          if (!result.success) {
+            responseText += `\n## Troubleshooting\n\n`;
+            responseText += `The compilation failed. Check the build log above for errors.\n`;
+            responseText += `Common issues:\n`;
+            responseText += `- Syntax errors in YAML configuration\n`;
+            responseText += `- Missing or incompatible components\n`;
+            responseText += `- Platform-specific issues\n`;
+          }
+          
+          return makeCompatibleResponse({
+            content: [createTextContent(responseText, { audience: ["user", "assistant"], priority: 0.9 })],
+          });
+        } catch (e) {
+          throw new Error(`ESPHome compile failed: ${e.message}`);
+        }
+      }
+
+      case "esphome_upload": {
+        const { device, port } = args;
+        sendLog("info", "esphome", { action: "upload", device, port });
+        
+        // Discover ESPHome add-on
+        const esphome = await discoverESPHome();
+        if (!esphome) {
+          throw new Error("ESPHome add-on is not installed or not accessible.");
+        }
+        
+        if (esphome.state !== "started") {
+          throw new Error(`ESPHome add-on is not running (current state: ${esphome.state}). Please start the ESPHome add-on first.`);
+        }
+        
+        // Ensure device has .yaml extension
+        const configuration = device.endsWith(".yaml") ? device : `${device}.yaml`;
+        
+        try {
+          const result = await streamESPHomeLogs(
+            esphome.url,
+            "upload",
+            { configuration, port },
+            null,
+            300000  // 5 minute timeout for upload
+          );
+          
+          // Format the output
+          let responseText = `# ESPHome Upload: ${device}\n\n`;
+          responseText += `**Status:** ${result.success ? "✅ Success" : "❌ Failed"}\n`;
+          responseText += `**Target:** ${port}\n`;
+          responseText += `**Duration:** ${result.duration}\n`;
+          responseText += `**Exit Code:** ${result.code}\n\n`;
+          
+          responseText += `## Upload Log\n\n`;
+          responseText += "```\n";
+          
+          // Truncate logs if too long
+          const logs = result.logs;
+          if (logs.length > 200) {
+            responseText += logs.slice(0, 30).join("\n");
+            responseText += `\n\n... (${logs.length - 130} lines omitted) ...\n\n`;
+            responseText += logs.slice(-100).join("\n");
+          } else {
+            responseText += logs.join("\n");
+          }
+          
+          responseText += "\n```\n";
+          
+          if (result.success) {
+            responseText += `\n## Next Steps\n\n`;
+            responseText += `The firmware has been uploaded successfully. The device should restart automatically.\n`;
+            responseText += `You can verify the device is online using \`esphome_list_devices\`.\n`;
+          } else {
+            responseText += `\n## Troubleshooting\n\n`;
+            responseText += `The upload failed. Common issues:\n`;
+            responseText += `- Device not reachable (check network connectivity)\n`;
+            responseText += `- Wrong port/IP address\n`;
+            responseText += `- Device in deep sleep mode\n`;
+            responseText += `- Firewall blocking OTA port (default: 3232)\n`;
+          }
+          
+          return makeCompatibleResponse({
+            content: [createTextContent(responseText, { audience: ["user", "assistant"], priority: 0.9 })],
+          });
+        } catch (e) {
+          throw new Error(`ESPHome upload failed: ${e.message}`);
         }
       }
 
