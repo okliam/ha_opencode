@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.0.13
+
+**Bug Fixes**
+
+- Fixed font rendering issues in web terminal (fixes #1)
+  - Removed explicit fontFamily configuration from ttyd
+  - Browser now uses default monospace font, avoiding letter-spacing issues when specified fonts aren't installed
+  - Thanks to @pixeye33 for reporting!
+- Fixed invalid JSON Schema for call_service MCP tool (fixes #2)
+  - Updated target properties (entity_id, area_id, device_id) to use `oneOf` with proper `items` definition for array types
+  - AI model APIs (OpenAI, Anthropic) now accept the schema without validation errors
+  - Thanks to @Teeflo for the detailed bug report!
+
 ## 1.0.12
 
 **Bug Fixes**
