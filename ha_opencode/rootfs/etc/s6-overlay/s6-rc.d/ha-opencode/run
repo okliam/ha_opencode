@@ -120,6 +120,10 @@ bashio::log.info "Starting ttyd on port 8099..."
 
 # ==============================================================================
 # Start ttyd with configured options
+# Uses tmux to maintain a single persistent session. When a user disconnects
+# and reconnects, they reattach to the existing session instead of spawning
+# a new OpenCode instance. The -A flag means "attach if session exists,
+# otherwise create a new one".
 # ==============================================================================
 
 exec ttyd \
@@ -136,4 +140,4 @@ exec ttyd \
     -t minimumContrastRatio=4.5 \
     -t scrollback=10000 \
     -t "theme=${THEME_JSON}" \
-    /usr/local/bin/opencode-session.sh
+    tmux new-session -A -s opencode /usr/local/bin/opencode-session.sh

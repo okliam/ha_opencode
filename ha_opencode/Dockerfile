@@ -17,6 +17,8 @@ ENV NODE_ENV=production \
 # - git: Required by OpenCode for version control operations
 # - jq: JSON processing for helper scripts
 # - curl/ca-certificates: For downloading ttyd
+# - procps: Provides pgrep for health check
+# - tmux: Session persistence to prevent multiple OpenCode instances
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -25,6 +27,8 @@ RUN apt-get update \
         jq \
         nodejs \
         npm \
+        procps \
+        tmux \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases (not in Debian repos)
