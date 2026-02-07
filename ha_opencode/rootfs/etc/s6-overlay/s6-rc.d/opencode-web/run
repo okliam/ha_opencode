@@ -16,6 +16,7 @@ export XDG_CONFIG_HOME="/data/.config"
 WEBUI_ENABLED=$(bashio::config 'webui_enabled')
 WEBUI_PASSWORD=$(bashio::config 'webui_password' || echo "")
 WEBUI_LOG_LEVEL=$(bashio::config 'webui_log_level' || echo "INFO")
+WEBUI_MDNS=$(bashio::config 'webui_mdns' || echo "false")
 SERVE_PORT=4096
 
 # Check if web UI is enabled
@@ -48,5 +49,10 @@ export NODE_OPTIONS="--max-old-space-size=512"
 # ==============================================================================
 
 SERVE_ARGS=(web --hostname "0.0.0.0" --port "${SERVE_PORT}" --log-level "${WEBUI_LOG_LEVEL}" --print-logs)
+
+if [ "${WEBUI_MDNS}" = "true" ]; then
+    SERVE_ARGS+=(--mdns)
+    bashio::log.info "mDNS discovery enabled (opencode.local)"
+fi
 
 exec opencode "${SERVE_ARGS[@]}"

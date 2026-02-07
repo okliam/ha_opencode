@@ -35,3 +35,7 @@ configuration:
   webui_log_level:
     name: "Web UI Log Level"
     description: "Log verbosity for the OpenCode Web UI server. DEBUG provides the most detailed information."
+  
+  webui_mdns:
+    name: "Enable mDNS Discovery"
+    description: "Advertise the OpenCode Web UI via mDNS on your local network. When enabled, you can access the Web UI at opencode.local instead of remembering the IP address."

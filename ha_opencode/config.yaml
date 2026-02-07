@@ -55,6 +55,7 @@ options:
   webui_enabled: true
   webui_password: ""
   webui_log_level: "INFO"
+  webui_mdns: false
 
 schema:
   # Feature toggles
@@ -71,6 +72,7 @@ schema:
   webui_enabled: bool
   webui_password: str?
   webui_log_level: list(DEBUG|INFO|WARN|ERROR)
+  webui_mdns: bool
 
 # Exclude caches from backups
 backup_exclude:

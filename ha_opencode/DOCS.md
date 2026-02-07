@@ -90,6 +90,7 @@ These options apply to the sidebar terminal view only, not the direct Web UI.
 | **Enable OpenCode Web UI** | `true` | Enable the native OpenCode web interface on port 4096. Provides full clipboard support. |
 | **Web UI Password** | *(empty)* | Optional password to protect the Web UI (username: `opencode`). Leave empty for no authentication. |
 | **Web UI Log Level** | `INFO` | Server log verbosity: `DEBUG`, `INFO`, `WARN`, or `ERROR` |
+| **Enable mDNS Discovery** | `false` | Advertise the Web UI via mDNS. Access via `opencode.local` instead of IP address. |
 
 ### Theme Previews
 
