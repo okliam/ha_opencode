@@ -72,7 +72,7 @@ schema:
   cursor_blink: bool
   
   # Advanced
-  opencode_config: str(0,32768)?
+  opencode_config: str?
   
   # OpenCode Web UI
   webui_enabled: bool
