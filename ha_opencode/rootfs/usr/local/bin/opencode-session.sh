@@ -19,14 +19,14 @@ mkdir -p "${HOME}/.local/share/opencode"
 mkdir -p "${HOME}/.config/opencode"
 
 # KDE Breeze-style colors
-BLUE='\033[38;2;29;153;243m'
-GREEN='\033[38;2;17;209;22m'
-YELLOW='\033[38;2;246;116;0m'
-CYAN='\033[38;2;26;188;156m'
-WHITE='\033[38;2;252;252;252m'
-GRAY='\033[38;2;127;140;141m'
-BOLD='\033[1m'
-NC='\033[0m'
+BLUE='\\033[38;2;29;153;243m'
+GREEN='\\033[38;2;17;209;22m'
+YELLOW='\\033[38;2;246;116;0m'
+CYAN='\\033[38;2;26;188;156m'
+WHITE='\\033[38;2;252;252;252m'
+GRAY='\\033[38;2;127;140;141m'
+BOLD='\\033[1m'
+NC='\\033[0m'
 
 # Change to Home Assistant config directory
 cd /homeassistant
@@ -51,21 +51,6 @@ show_banner() {
     echo ""
 }
 
-# Function to show shell help (after exiting opencode)
-show_shell_help() {
-    echo ""
-    echo -e "${GRAY}────────────────────────────────────────────────────────────${NC}"
-    echo ""
-    echo -e "${WHITE}Dropped to shell.${NC} Working directory: ${CYAN}/homeassistant${NC}"
-    echo ""
-    echo -e "${BOLD}Commands${NC}"
-    echo -e "  ${GREEN}opencode${NC}          Restart the AI coding agent"
-    echo -e "  ${GREEN}ha-logs${NC} ${GRAY}<type>${NC}    View logs (core, error, supervisor, host)"
-    echo -e "  ${GREEN}ha-mcp${NC} ${GRAY}<cmd>${NC}     MCP integration (enable, disable, status)"
-    echo ""
-}
-
-# Show initial banner
 show_banner
 
 echo -e "${WHITE}Working directory:${NC} ${CYAN}/homeassistant${NC}"
@@ -73,11 +58,16 @@ echo -e "${GRAY}First time? Use ${NC}${GREEN}/connect${NC} ${GRAY}inside OpenCod
 echo -e "${GRAY}Customize AI behavior by editing ${NC}${GREEN}AGENTS.md${NC} ${GRAY}in your config folder${NC}"
 echo ""
 
-# Launch OpenCode
 opencode
 
-# When opencode exits, show help and drop to bash
-show_shell_help
+echo ""
+echo -e "${GRAY}────────────────────────────────────────────────────────────${NC}"
+echo ""
+echo -e "${WHITE}OpenCode exited.${NC} Working directory: ${CYAN}/homeassistant${NC}"
+echo ""
+echo -e "${BOLD}Commands${NC}"
+echo -e "  ${GREEN}opencode${NC}          Restart the AI coding agent"
+echo -e "  ${GREEN}ha${NC} ${GRAY}<cmd>${NC}         Home Assistant CLI (restart, logs, etc)"
+echo ""
 
-# Start interactive bash shell
 exec bash --login
