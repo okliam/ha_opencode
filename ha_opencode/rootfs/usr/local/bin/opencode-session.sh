@@ -30,6 +30,7 @@ NC='\033[0m'
 
 # Force baseline version for CPU compatibility if needed
 CPU_MODE=$(cat /data/.cpu_mode 2>/dev/null || echo "unknown")
+ADDON_VERSION=$(cat /data/.addon_version 2>/dev/null || echo "unknown")
 CPU_INFO=""
 if [ "${CPU_MODE}" = "baseline" ]; then
     CPU_INFO=" ${YELLOW}(baseline CPU mode)${NC}"
@@ -52,7 +53,7 @@ fi
 show_banner() {
     clear
     echo ""
-    echo -e "${BLUE}${BOLD}HA OpenCode${NC} ${GRAY}v1.0${NC}${CPU_INFO}"
+    echo -e "${BLUE}${BOLD}HA OpenCode${NC} ${GRAY}v${ADDON_VERSION}${NC}${CPU_INFO}"
     echo -e "${GRAY}AI-powered coding agent for Home Assistant${NC}"
     echo ""
     echo -e "${GRAY}────────────────────────────────────────────────────────────${NC}"

@@ -6,6 +6,9 @@
 
 bashio::log.info "Initializing HA OpenCode..."
 
+# Save addon version for the terminal banner
+bashio::addon.version > /data/.addon_version
+
 # ==============================================================================
 # Read configuration options early (needed for CPU detection)
 # ==============================================================================
