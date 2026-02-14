@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.2.3
+
+**Bug Fixes: Terminal Session Persistence and CPU Compatibility**
+
+### Fixed
+- Fixed color escape sequences in `opencode-session.sh` for proper terminal rendering
+- Restored original help message and command list in the bash prompt fallback
+- Ensured baseline binary usage via `OPENCODE_BIN_PATH` when running in CPU compatibility mode to prevent "Illegal instruction" errors
+
+### Added
+- Added current add-on version display to the terminal welcome banner
+
 ## 1.2.2
 
 **Bug Fix: Schema Validation Error on Upgrade**
