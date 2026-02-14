@@ -58,7 +58,7 @@ All notable changes to this project will be documented in this file.
 
 ## 1.1.6
 
-**Bug Fix: Multiple OpenCode Instances Spawning (fixes [#4](https://github.com/magnusoverli/ha_opencode/issues/4))**
+**Bug Fix: Multiple OpenCode Instances Spawning (fixes [#4](https://github.com/okliam/ha_opencode/issues/4))**
 
 - Fixed container health check failing due to missing `pgrep` (added `procps` package)
 - Added `tmux` for session persistence — reconnecting now reattaches to the existing session instead of spawning a new OpenCode instance
