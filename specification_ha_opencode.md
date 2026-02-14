@@ -203,7 +203,7 @@ build_from:
   aarch64: ghcr.io/home-assistant/aarch64-base-debian:bookworm
   amd64: ghcr.io/home-assistant/amd64-base-debian:bookworm
 args:
-  OPENCODE_VERSION: "latest"
+  OPENCODE_VERSION: "1.2.1"
   TTYD_VERSION: "1.7.7"
 labels:
   org.opencontainers.image.title: "HA OpenCode"

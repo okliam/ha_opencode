@@ -5,7 +5,7 @@ FROM $BUILD_FROM
 ARG BUILD_VERSION
 ARG BUILD_ARCH
 ARG TTYD_VERSION=1.7.7
-ARG OPENCODE_VERSION=latest
+ARG OPENCODE_VERSION=1.2.1
 
 # Environment for better Node.js performance
 ENV NODE_ENV=production \
