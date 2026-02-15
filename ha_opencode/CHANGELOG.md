@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.2.4
+
+**Bug Fix: MCP Error Log Tool (404 Error)**
+
+### Fixed
+- Fixed `get_error_log` MCP tool by using the correct Supervisor API proxy path.
+- Cleaned up redundant API helper functions in the MCP server.
+
 ## 1.2.3
 
 **Bug Fixes: Terminal Session Persistence and CPU Compatibility**
