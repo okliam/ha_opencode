@@ -7,7 +7,7 @@ build_from:
   amd64: ghcr.io/home-assistant/amd64-base-debian:bookworm
 args:
   # Pin versions for reproducible builds (use 'latest' for auto-updates)
-  OPENCODE_VERSION: "1.2.1"
+  OPENCODE_VERSION: "1.2.4"
   TTYD_VERSION: "1.7.7"
 labels:
   org.opencontainers.image.title: "HA OpenCode"

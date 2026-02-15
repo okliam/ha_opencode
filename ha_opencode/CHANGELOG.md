@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 ## 1.2.4
 
+**Component Versions**
+
+- **Addon**: 1.2.4
+- **OpenCode**: 1.2.4
+- **MCP Server**: 2.5.0
+- **LSP Server**: 1.0.0
+
 **Bug Fix: MCP Error Log Tool (404 Error)**
 
 ### Fixed
