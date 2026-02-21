@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.2.5
+
+**New Features & Enhancements**
+
+- **OpenCode Update**: Upgraded internal OpenCode version to `1.2.10`.
+- **Custom MCP Servers**: Added the ability to configure custom MCP (Model Context Protocol) servers.
+  - New `mcp_custom_servers` option in the addon configuration allows defining a list of servers.
+  - Supports both `stdio` (local command-based) and `sse` (remote URL-based) servers.
+- **Per-Server Proxy Support**: Implemented proxy support for individual MCP server connections.
+  - A `proxy` field can be added to each server configuration.
+  - For `stdio` servers, this automatically injects `HTTP_PROXY` and `HTTPS_PROXY` environment variables.
+
+**Bug Fixes**
+
+- Fixed a bug where environment variables (including proxy settings) were not correctly passed to custom MCP servers due to a field name mismatch (`env` vs. `environment`) in the configuration generation script.
+
 ## 1.2.4
 
 **Component Versions**
