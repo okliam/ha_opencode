@@ -1,7 +1,7 @@
 ---
 name: "HA OpenCode"
 description: "AI coding agent for editing Home Assistant configuration with deep MCP integration and LSP support"
-version: "1.2.4"
+version: "1.2.5"
 slug: "ha_opencode"
 # image: "ghcr.io/magnusoverli/ha_opencode/{arch}"
 url: "https://github.com/okliam/ha_opencode"
@@ -45,6 +45,9 @@ options:
   mcp_enabled: false
   lsp_enabled: true
   
+  # Custom MCP servers configuration
+  mcp_custom_servers: []
+  
   # CPU mode: auto (detect), baseline (for older CPUs), regular (force AVX2)
   cpu_mode: "auto"
   
@@ -67,6 +70,18 @@ schema:
   # Feature toggles
   mcp_enabled: bool
   lsp_enabled: bool
+  
+  # Custom MCP servers
+  mcp_custom_servers:
+    type: list
+    schema:
+      name: str
+      type: list(stdio|sse)
+      command: str?
+      args: list(str)?
+      url: str?
+      env: dict?
+      proxy: str?
   
   # CPU mode
   cpu_mode: list(auto|baseline|regular)

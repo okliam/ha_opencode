@@ -206,24 +206,47 @@ if [ ! -f "/homeassistant/.prettierrc.yaml" ]; then
 fi
 
 # ==============================================================================
-# Read configuration options
-# ==============================================================================
-
-bashio::log.info "Configuration: MCP=${MCP_ENABLED} LSP=${LSP_ENABLED} CPU_MODE=${CPU_MODE_CONFIG}"
-
-# ==============================================================================
 # Generate OpenCode configuration file
 # ==============================================================================
 
 MCP_BOOL=$([ "${MCP_ENABLED}" = "true" ] && echo "true" || echo "false")
 LSP_DISABLED=$([ "${LSP_ENABLED}" = "true" ] && echo "false" || echo "true")
 
-jq --argjson mcp "${MCP_BOOL}" --argjson lsp_disabled "${LSP_DISABLED}" '
+# Get custom MCP servers configuration
+CUSTOM_MCP_SERVERS=$(bashio::config 'mcp_custom_servers' 2>/dev/null || echo "[]")
+
+# Process custom MCP servers to inject proxy settings if needed
+PROCESSED_CUSTOM_SERVERS=$(echo "${CUSTOM_MCP_SERVERS}" | jq -c '
+  map(
+    if (.type == "stdio" or .type == "stdio-remote") and (.proxy | type == "string") then
+      (.env //= {}) | (.env.HTTP_PROXY //= .proxy) | (.env.HTTPS_PROXY //= .proxy)
+    else
+      .
+    end
+  )
+')
+
+# Generate the final configuration by merging base config with custom servers
+jq --argjson mcp "${MCP_BOOL}" --argjson lsp_disabled "${LSP_DISABLED}" --argjson custom_servers "${PROCESSED_CUSTOM_SERVERS}" '
     .mcp.homeassistant.enabled = $mcp |
-    if $lsp_disabled then .lsp["ha-yaml"].disabled = true else del(.lsp["ha-yaml"].disabled) end
+    if $lsp_disabled then .lsp["ha-yaml"].disabled = true else del(.lsp["ha-yaml"].disabled) end |
+    # Add custom MCP servers to the configuration
+    if ($custom_servers | length > 0) then
+      .mcp |= . + ($custom_servers | map(
+        if .type == "stdio" or .type == "stdio-remote" then
+          {(.name): {type: .type, command: .command, args: .args, environment: .env}}
+        elif .type == "sse" then
+          {(.name): {type: .type, url: .url, environment: .env}}
+        else
+          {(.name): {type: .type, command: .command, args: .args, url: .url, environment: .env}}
+        end
+      ) | add)
+    else
+      .
+    end
 ' /opt/ha-mcp-server/opencode-ha.json > /data/.config/opencode/opencode.json
 
-bashio::log.info "OpenCode configuration generated successfully"
+bashio::log.info "OpenCode configuration generated successfully with $(echo "${CUSTOM_MCP_SERVERS}" | jq 'length') custom MCP servers"
 
 # ==============================================================================
 # Inject custom OpenCode config.json (optional, for advanced users)
