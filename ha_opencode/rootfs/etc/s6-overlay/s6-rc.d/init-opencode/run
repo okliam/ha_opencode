@@ -233,14 +233,14 @@ jq --argjson mcp "${MCP_BOOL}" --argjson lsp_disabled "${LSP_DISABLED}" --argjso
     # Add custom MCP servers to the configuration
     if ($custom_servers | length > 0) then
       .mcp |= . + ($custom_servers | map(
-        if .type == "stdio" or .type == "stdio-remote" then
-          {(.name): {type: .type, command: .command, args: .args, environment: .env}}
-        elif .type == "sse" then
-          {(.name): {type: .type, url: .url, environment: .env}}
-        else
-          {(.name): {type: .type, command: .command, args: .args, url: .url, environment: .env}}
-        end
-      ) | add)
+              if .type == "stdio" or .type == "stdio-remote" then
+                {(.name): {type: .type, command: .command, args: .args, env: .env}}
+              elif .type == "sse" then
+                {(.name): {type: .type, url: .url, env: .env}}
+              else
+                {(.name): {type: .type, command: .command, args: .args, url: .url, env: .env}}
+              end
+            ) | add)
     else
       .
     end
